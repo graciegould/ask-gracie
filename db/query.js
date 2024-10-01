@@ -111,7 +111,7 @@ class Query {
         for (const [columnName, columnProps] of Object.entries(columns)) {
             let columnDef = `${columnName} ${columnProps.type}`;
             if (columnProps.pk) {
-                columnDef += ' PRIMARY KEY';
+                columnDef += ' PRIMARY KEY AUTO_INCREMENT';
             }
             if (columnProps.null === false) {
                 columnDef += ' NOT NULL';
