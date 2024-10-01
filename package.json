@@ -1,0 +1,26 @@
+{
+  "name": "ask-gracie",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/graciegould/ask-gracie.git"
+  },
+  "author": "Gracie Gould",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/graciegould/ask-gracie/issues"
+  },
+  "homepage": "https://github.com/graciegould/ask-gracie#readme",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "mysql2": "^3.11.3",
+    "openai": "^4.66.1"
+  }
+}
