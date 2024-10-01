@@ -29,19 +29,35 @@ class Query {
      * @returns {string} - The formatted filter string for SQL queries.
      */
     static formattedFilters = (filters) => {
-        let formattedFilters = '';
+        if (filters.length === 0) {
+            return '';
+        }
+    
+        let formattedFilters = 'WHERE ';
         filters.forEach((filter, i) => {
             let column = filter[0];
-            let condition = filter[1] || '=';
-            let value = filter[2] || filter[1];
-            if (typeof value === 'string') {
-                value = `'${value.replace(/'/g, "''")}'`; // Escape single quotes in strings
+            let condition, value;
+    
+            if (filter.length === 2) {
+                condition = '=';
+                value = filter[1];
+            } else if (filter.length === 3) {
+                condition = filter[1];
+                value = filter[2];
+            } else {
+                throw new Error('Invalid filter format');
             }
+    
+            if (typeof value === 'string') {
+                value = `'${value.replace(/'/g, "''")}'`; 
+            }
+    
             formattedFilters += `${column} ${condition} ${value}`;
             if (i < filters.length - 1) {
                 formattedFilters += ' AND ';
             }
         });
+    
         return formattedFilters;
     }
 
@@ -54,10 +70,10 @@ class Query {
      */
     static select = async (table, filters) => {
         let query = `SELECT * FROM ${table}`;
-
         if (filters) {
-            `${query} ${this.formattedFilters(filters)}`;
+            query = `${query} ${this.formattedFilters(filters)}`;
         }
+        console.log("query", query);
         return await Query.query(query);
     }
 
@@ -99,32 +115,39 @@ class Query {
     }
 
     /**
-     * creates a new table with specified columns.
+     * Creates a new table with specified columns.
      * @param {string} table - The name of the table to create.
      * @param {Object} columns - {column: {type: string, pk: bool?, null: bool?, fkTable: string? : fkColumn: string? }} pairs for the columns to create.
-    */
+     */
     static createTable = async (table, columns) => {
-        // Construct the SQL query
         let query = `CREATE TABLE ${table} (`;
         const columnDefinitions = [];
-    
+        const foreignKeys = [];
+
         for (const [columnName, columnProps] of Object.entries(columns)) {
             let columnDef = `${columnName} ${columnProps.type}`;
             if (columnProps.pk) {
-                columnDef += ' PRIMARY KEY AUTO_INCREMENT';
+                columnDef += ' PRIMARY KEY';
+                if (columnProps.type.toLowerCase() === 'int') {
+                    columnDef += ' AUTO_INCREMENT';
+                }
             }
             if (columnProps.null === false) {
                 columnDef += ' NOT NULL';
             }
             if (columnProps.fkTable && columnProps.fkColumn) {
-                columnDef += `, FOREIGN KEY (${columnName}) REFERENCES ${columnProps.fkTable}(${columnProps.fkColumn})`;
+                foreignKeys.push(`FOREIGN KEY (${columnName}) REFERENCES ${columnProps.fkTable}(${columnProps.fkColumn})`);
             }
+
             columnDefinitions.push(columnDef);
         }
-    
-        query += columnDefinitions.join(', ') + ');';
-    
-        // Execute the query
+        query += columnDefinitions.join(', ');
+
+        if (foreignKeys.length > 0) {
+            query += ', ' + foreignKeys.join(', ');
+        }
+
+        query += ');';
         try {
             const results = await new Promise((resolve, reject) => {
                 con.query(query, (err, results) => {
@@ -139,6 +162,7 @@ class Query {
             throw err;
         }
     }
+
 }
 
 
