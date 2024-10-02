@@ -73,7 +73,6 @@ class Query {
         if (filters) {
             query = `${query} ${this.formattedFilters(filters)}`;
         }
-        console.log("query", query);
         return await Query.query(query);
     }
 
@@ -94,9 +93,28 @@ class Query {
         columns = columns.slice(0, -2);
         values = values.slice(0, -2);
         query += `${columns}) VALUES (${values})`;
-        return await this.query(query);
+        let results = await this.query(query);
+        let primaryKey = await this.primaryKey(table);
+        if(primaryKey === null) {
+            let filters = []
+            for (const [key, value] of Object.entries(data)) {
+                filters.push([key, value]);
+            }
+            return this.select(table, filters);
+        }
+        let entry = await this.select(table, [[await this.primaryKey(table), '=', results.insertId]]);
+        return entry[0];
     }
 
+    static primaryKey = async (table) => {
+        const query = `SHOW KEYS FROM ${table} WHERE Key_name = 'PRIMARY'`;
+        const result = await this.query(query);
+        if (result.length === 0) {
+            return null;
+        }
+        console.log(result[0].Column_name);
+        return result[0].Column_name;
+    }
     /**
      * Updates rows in a table with specified data and filters.
      * @param {string} table - The name of the table to update.
